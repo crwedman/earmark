@@ -125,9 +125,14 @@ defmodule Earmark.HtmlRenderer do
     class =
       if language, do: ~s{ class="#{code_classes(language, options.code_class_prefix)}"}, else: ""
 
-    tag = ~s[<pre><code#{class}>]
-    lines = options.render_code.(block)
-    html = ~s[#{tag}#{lines}</code></pre>\n]
+    html = case Earmark.Extension.render(language, block.lines) do
+      { :ok, output } ->
+        output
+      :error ->
+        tag = ~s[<pre><code#{class}>]
+        lines = options.render_code.(block)
+        ~s[#{tag}#{lines}</code></pre>\n]
+    end
     add_attrs(context, html, attrs, [], lnb)
   end
 
@@ -242,7 +247,7 @@ defmodule Earmark.HtmlRenderer do
         end
 
       col = Enum.at(row, n - 1)
-      converted = convert(col, lnb, set_messages(ctx, [])) 
+      converted = convert(col, lnb, set_messages(ctx, []))
       append(add_messages_from(ctx, converted), "<#{tag}#{style}>#{converted.value}</#{tag}>")
     end
   end
